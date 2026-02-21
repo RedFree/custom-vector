@@ -39,6 +39,13 @@ public:
             std::copy(other.data_, other.data_ + size_, data_);
         }
     }
+    // 移动构造函数
+    Vector(Vector&& other) noexcept
+        : data_(other.data_), size_(other.size_), capacity_(other.capacity_) {
+        other.data_ = nullptr;
+        other.size_ = 0;
+        other.capacity_ = 0;
+    }
     // 赋值运算符
     Vector& operator=(const Vector& other) {
         if (this != &other) {
@@ -51,6 +58,19 @@ public:
             } else {
                 data_ = nullptr;
             }
+        }
+        return *this;
+    }
+    // 移动赋值运算符
+    Vector& operator=(Vector&& other) noexcept {
+        if (this != &other) {
+            delete[] data_;
+            data_ = other.data_;
+            size_ = other.size_;
+            capacity_ = other.capacity_;
+            other.data_ = nullptr;
+            other.size_ = 0;
+            other.capacity_ = 0;
         }
         return *this;
     }
@@ -142,6 +162,14 @@ public:
         T* operator->() {
             return ptr_;
         }
+
+        // 运算符重载
+        ptrdiff_t operator-(const iterator& other) const {
+            return ptr_ - other.ptr_;
+        }
+        iterator operator+(ptrdiff_t n) const {
+            return iterator(ptr_ + n);
+        }
     };
 
     class const_iterator {
@@ -169,12 +197,50 @@ public:
         }
     };
 
+    // 反向迭代器
+    class reverse_iterator {
+    private:
+        T* ptr_;
+    public:
+        reverse_iterator(T* ptr) : ptr_(ptr) {}
+        reverse_iterator& operator++() {
+            --ptr_;
+            return *this;
+        }
+        reverse_iterator operator++(int) {
+            reverse_iterator temp = *this;
+            --ptr_;
+            return temp;
+        }
+        bool operator==(const reverse_iterator& other) const {
+            return ptr_ == other.ptr_;
+        }
+        bool operator!=(const reverse_iterator& other) const {
+            return ptr_ != other.ptr_;
+        }
+        T& operator*() {
+            return *ptr_;
+        }
+        T* operator->() {
+            return ptr_;
+        }
+
+        ptrdiff_t operator-(const reverse_iterator& other) const {
+            return other.ptr_ - ptr_;
+        }
+        reverse_iterator operator+(ptrdiff_t n) const {
+            return reverse_iterator(ptr_ - n);
+        }
+    };
+
     iterator begin() { return iterator(data_); }
     iterator end() { return iterator(data_ + size_); }
     const_iterator begin() const { return const_iterator(data_); }
     const_iterator end() const { return const_iterator(data_ + size_); }
     const_iterator cbegin() const { return const_iterator(data_); }
     const_iterator cend() const { return const_iterator(data_ + size_); }
+    reverse_iterator rbegin() { return reverse_iterator(data_ + size_ - 1); }
+    reverse_iterator rend() { return reverse_iterator(data_ - 1); }
 
     // 容量相关
     size_t size() const { return size_; }
@@ -240,6 +306,17 @@ public:
         std::copy(init.begin(), init.end(), data_);
         size_ = init.size();
     }
+    // 移动语义辅助：从其他 vector 构造
+    Vector& move_from(Vector&& other) noexcept {
+        delete[] data_;
+        data_ = other.data_;
+        size_ = other.size_;
+        capacity_ = other.capacity_;
+        other.data_ = nullptr;
+        other.size_ = 0;
+        other.capacity_ = 0;
+        return *this;
+    }
 
     // 插入和删除
     iterator insert(iterator pos, const T& value) {
@@ -248,9 +325,21 @@ public:
             reserve(size_ + 1);
         }
         for (size_t i = size_; i > index; --i) {
-            data_[i] = data_[i - 1];
+            data_[i] = std::move(data_[i - 1]);
         }
-        data_[index] = value;
+        data_[index] = std::move(value);
+        ++size_;
+        return iterator(data_ + index);
+    }
+    iterator insert(iterator pos, T&& value) {
+        size_t index = pos - begin();
+        if (size_ >= capacity_) {
+            reserve(size_ + 1);
+        }
+        for (size_t i = size_; i > index; --i) {
+            data_[i] = std::move(data_[i - 1]);
+        }
+        data_[index] = std::move(value);
         ++size_;
         return iterator(data_ + index);
     }
@@ -258,8 +347,8 @@ public:
         if (pos == end()) {
             return pos;
         }
-        for (auto i = pos; i != end() - 1; ++i) {
-            *i = *(i + 1);
+        for (auto i = pos; i + 1 != end(); ++i) {
+            *i = std::move(*(i + 1));
         }
         --size_;
         return pos;

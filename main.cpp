@@ -171,6 +171,41 @@ void test_string_vector() {
     print_separator();
 }
 
+void test_move_semantics() {
+    std::cout << "测试移动语义...\n";
+
+    Vector<int> vec1;
+    for (int i = 0; i < 3; ++i) {
+        vec1.push_back(i);
+    }
+
+    // 移动构造
+    Vector<int> vec2 = std::move(vec1);
+    std::cout << "移动构造后 vec2: ";
+    for (int x : vec2) std::cout << x << " ";
+    std::cout << "\n";
+    std::cout << "vec1 是否为空: " << (vec1.empty() ? "是" : "否") << "\n";
+
+    Vector<int> vec3;
+    vec3 = std::move(vec2);
+    std::cout << "移动赋值后 vec3: ";
+    for (int x : vec3) std::cout << x << " ";
+    std::cout << "\n";
+    std::cout << "vec2 是否为空: " << (vec2.empty() ? "是" : "否") << "\n";
+
+    // 移动 string 类型
+    Vector<std::string> str_vec;
+    str_vec.push_back("Hello");
+    str_vec.push_back("World");
+    Vector<std::string> moved_vec = std::move(str_vec);
+    std::cout << "移动 string vector 后 moved_vec: ";
+    for (const auto& s : moved_vec) std::cout << s << " ";
+    std::cout << "\n";
+    std::cout << "str_vec 是否为空: " << (str_vec.empty() ? "是" : "否") << "\n";
+
+    print_separator();
+}
+
 void test_out_of_range() {
     std::cout << "测试 out_of_range 异常...\n";
 
@@ -206,6 +241,7 @@ int main() {
     test_insert_erase();
     test_reserve_resize();
     test_string_vector();
+    test_move_semantics();
     test_out_of_range();
 
     std::cout << "所有测试完成!\n";
