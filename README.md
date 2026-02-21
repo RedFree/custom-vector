@@ -118,7 +118,7 @@ MIT License
 
 ## 作者
 
-OpenClaw Assistant
+RedFree
 
 ## 致谢
 
