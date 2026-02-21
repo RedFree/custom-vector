@@ -4,14 +4,14 @@
 
 ## 功能特性
 
-- ✅ **基本操作**：`push_back`, `pop_back`, `size`, `capacity`, `empty`
-- ✅ **迭代器支持**：`begin`, `end`, `rbegin`, `rend`, `const_iterator`
-- ✅ **拷贝语义**：拷贝构造函数和赋值运算符
-- ✅ **动态扩容**：使用 2 倍增长策略自动扩容
-- ✅ **异常安全**：`at()` 方法进行边界检查，抛出 `std::out_of_range`
-- ✅ **类型支持**：支持所有基本类型（int, double, float, string 等）
-- ✅ **高级功能**：`reserve`, `resize`, `shrink_to_fit`, `insert`, `erase`
-- ✅ **初始化列表**：支持 `std::initializer_list` 构造
+- ✅ 基本操作：`push_back`, `pop_back`, `size`, `capacity`, `empty`
+- ✅ 迭代器支持：`begin`, `end`, `rbegin`, `rend`, `const_iterator`
+- ✅ 拷贝语义：拷贝构造函数和赋值运算符
+- ✅ 动态扩容：使用 2 倍增长策略自动扩容
+- ✅ 异常安全：`at()` 方法进行边界检查，抛出 `std::out_of_range`
+- ✅ 类型支持：支持所有基本类型（int, double, float, string 等）
+- ✅ 高级功能：`reserve`, `resize`, `shrink_to_fit`, `insert`, `erase`
+- ✅ 初始化列表：支持 `std::initializer_list` 构造
 
 ## 编译
 
@@ -28,13 +28,6 @@ make
 
 ```bash
 g++ -std=c++11 main.cpp -o vector_test
-./vector_test
-```
-
-### 使用 Clang
-
-```bash
-clang++ -std=c++11 main.cpp -o vector_test
 ./vector_test
 ```
 
@@ -65,140 +58,27 @@ custom-vector/
 └── README.md       # 本文件
 ```
 
-### vector.hpp 关键实现
-
-```cpp
-template <typename T>
-class Vector {
-private:
-    T* data_;          // 动态数组指针
-    size_t size_;      // 当前元素个数
-    size_t capacity_;  // 容量
-
-public:
-    // 构造函数
-    Vector() : data_(nullptr), size_(0), capacity_(0) {}
-    explicit Vector(size_t n, const T& value = T());
-    Vector(std::initializer_list<T> init);
-
-    // 拷贝语义
-    Vector(const Vector& other);
-    Vector& operator=(const Vector& other);
-
-    // 基本操作
-    void push_back(const T& value);
-    void pop_back();
-    size_t size() const;
-    size_t capacity() const;
-    bool empty() const;
-
-    // 访问元素
-    T& operator[](size_t index);
-    T& at(size_t index);  // 异常安全版本
-    T& front();
-    T& back();
-
-    // 迭代器
-    class iterator;
-    iterator begin();
-    iterator end();
-
-    // 高级功能
-    void reserve(size_t new_capacity);
-    void resize(size_t new_size, const T& value = T());
-    void shrink_to_fit();
-    iterator insert(iterator pos, const T& value);
-    iterator erase(iterator pos);
-};
-```
-
 ## 设计特点
 
 ### 1. 动态扩容策略
 
 当空间不足时，容量翻倍（2x）：
-```cpp
-if (size_ >= capacity_) {
-    size_t new_capacity = capacity_ == 0 ? 1 : capacity_ * 2;
-    reserve(new_capacity);
-}
-```
-
-这种策略在 amortized 时间复杂度上接近 O(1)，平衡了性能和内存使用。
+- 扩容时分配新内存
+- 复制原有元素到新内存
+- 释放旧内存
+- 在 amortized 时间复杂度上接近 O(1)
 
 ### 2. 异常安全
 
-`at()` 方法进行边界检查：
-```cpp
-T& at(size_t index) {
-    if (index >= size_) {
-        throw std::out_of_range("Vector index out of range");
-    }
-    return data_[index];
-}
-```
+`at()` 方法进行边界检查，越界时抛出 `std::out_of_range` 异常。
 
 ### 3. RAII 原则
 
-使用拷贝构造和赋值运算符确保资源安全：
-```cpp
-Vector(const Vector& other) {
-    size_ = other.size_;
-    capacity_ = other.capacity_;
-    data_ = new T[size_];
-    std::copy(other.data_, other.data_ + size_, data_);
-}
-```
+使用拷贝构造和赋值运算符确保资源安全，遵循 RAII 原则。
 
 ### 4. 简洁高效
 
-直接使用裸指针，避免额外的间接开销：
-- 无虚函数
-- 无模板元编程
-- 无复杂的内存池
-- 易于理解和调试
-
-## 示例用法
-
-### 基本用法
-
-```cpp
-Vector<int> vec;
-
-vec.push_back(1);
-vec.push_back(2);
-vec.push_back(3);
-
-std::cout << vec.size() << "\n";      // 3
-std::cout << vec.front() << "\n";     // 1
-std::cout << vec.back() << "\n";      // 3
-
-vec.pop_back();
-std::cout << vec.size() << "\n";      // 2
-```
-
-### 迭代器
-
-```cpp
-Vector<int> vec = {1, 2, 3, 4, 5};
-
-// 正向遍历
-for (auto it = vec.begin(); it != vec.end(); ++it) {
-    std::cout << *it << " ";
-}
-
-// 反向遍历
-for (auto it = vec.rbegin(); it != vec.rend(); ++it) {
-    std::cout << *it << " ";
-}
-```
-
-### 初始化列表
-
-```cpp
-Vector<int> vec1 = {1, 2, 3, 4, 5};
-Vector<std::string> vec2 = {"Hello", "World", "C++"};
-```
+直接使用裸指针，避免额外的间接开销，易于理解和调试。
 
 ## 性能分析
 
